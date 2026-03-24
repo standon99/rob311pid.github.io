@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROB 311 — Root Locus PID Tuning Tool</title>
+<style>
+/* ==================================================================
+   ROB 311 ROOT LOCUS LAB — Dark engineering UI
+   Michigan Maize (#FFCB05) / Blue (#00274C) accents
+   ================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg:        #0a0e17;
+  --bg2:       #111827;
+  --card:      #1a2234;
+  --input-bg:  #0d1321;
+  --border:    #2a3a52;
+  --text:      #e8edf5;
+  --text2:     #8899b4;
+  --muted:     #556680;
+  --maize:     #FFCB05;
+  --green:     #34d399;
+  --red:       #f87171;
+  --cyan:      #22d3ee;
+  --orange:    #fb923c;
+  --purple:    #a78bfa;
+}
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.header {
+  background: linear-gradient(180deg, #0f1729, var(--bg));
+  border-bottom: 1px solid var(--border);
+  padding: 14px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.header-left { display: flex; align-items: center; gap: 14px; }
+.logo {
+  font-family: 'JetBrains Mono', monospace; font-weight: 700;
+  font-size: 12px; color: var(--maize); letter-spacing: 2px;
+  text-transform: uppercase;
+  background: rgba(255,203,5,.08); padding: 5px 10px;
+  border: 1px solid rgba(255,203,5,.2); border-radius: 4px;
+}
+.header-title { font-size: 14px; color: var(--text2); }
+.header-title span { color: var(--text); font-weight: 600; }
+
+.badge {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  font-weight: 600; letter-spacing: 1px; padding: 5px 14px;
+  border-radius: 4px; text-transform: uppercase; transition: all .3s;
+}
+.badge.stable   { background: rgba(52,211,153,.1); color: var(--green);
+                   border: 1px solid rgba(52,211,153,.3); }
+.badge.unstable { background: rgba(248,113,113,.1); color: var(--red);
+                   border: 1px solid rgba(248,113,113,.3);
+                   animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(248,113,113,.2); }
+  50%     { box-shadow: 0 0 10px 2px rgba(248,113,113,.12); }
+}
+
+/* ── Controls bar ── */
+.controls {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 18px 28px; display: flex; gap: 28px; align-items: flex-end;
+  flex-wrap: wrap;
+}
+.gain-group { flex: 1; min-width: 220px; max-width: 340px; }
+.gain-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.gain-name {
+  font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  font-weight: 600; color: var(--text); letter-spacing: .5px;
+}
+.gain-name sub { font-size: 10px; color: var(--text2); }
+.gain-val {
+  font-family: 'JetBrains Mono', monospace; font-size: 18px;
+  font-weight: 700; letter-spacing: -.5px; min-width: 70px; text-align: right;
+}
+.gain-val.kp { color: var(--cyan);   }
+.gain-val.ki { color: var(--orange); }
+.gain-val.kd { color: var(--purple); }
+.gain-desc { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+.slider-row { display: flex; align-items: center; gap: 10px; }
+.slider-row input[type=range] { flex: 1; }
+.num-input {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  width: 72px; padding: 3px 6px; background: var(--input-bg);
+  border: 1px solid var(--border); border-radius: 3px;
+  color: var(--text); text-align: right; outline: none;
+}
+.num-input:focus { border-color: #3b5998; }
+
+/* Range slider styling */
+input[type=range] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 5px;
+  border-radius: 3px; background: var(--input-bg); border: 1px solid var(--border);
+  outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+  cursor: pointer; border: 2px solid; transition: box-shadow .2s;
+}
+input[type=range]::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%;
+  cursor: pointer; border: 2px solid;
+}
+.s-kp::-webkit-slider-thumb { background: var(--cyan);   border-color: var(--cyan);   }
+.s-ki::-webkit-slider-thumb { background: var(--orange); border-color: var(--orange); }
+.s-kd::-webkit-slider-thumb { background: var(--purple); border-color: var(--purple); }
+.s-kp::-moz-range-thumb { background: var(--cyan);   border-color: var(--cyan);   }
+.s-ki::-moz-range-thumb { background: var(--orange); border-color: var(--orange); }
+.s-kd::-moz-range-thumb { background: var(--purple); border-color: var(--purple); }
+
+/* ── Main content ── */
+.main {
+  padding: 20px 28px;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+
+/* Plot image */
+.plot-wrap {
+  position: relative; width: 100%; max-width: 1200px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  overflow: hidden;
+}
+.plot-wrap img {
+  display: block; width: 100%; height: auto;
+}
+.loading {
+  position: absolute; inset: 0; background: rgba(10,14,23,.6);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 2;
+}
+.loading.on { opacity: 1; pointer-events: auto; }
+.spinner {
+  width: 28px; height: 28px; border: 3px solid var(--border);
+  border-top-color: var(--maize); border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Placeholder when no plot yet */
+.placeholder {
+  display: flex; align-items: center; justify-content: center;
+  height: 400px; color: var(--muted); font-size: 15px;
+}
+
+/* ── Poles readout ── */
+.poles-bar {
+  width: 100%; max-width: 1200px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+  padding: 12px 18px; display: flex; flex-wrap: wrap; gap: 6px 18px;
+  align-items: center;
+}
+.poles-title {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--muted); margin-right: 8px;
+}
+.pole-chip {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  padding: 3px 10px; border-radius: 3px; display: flex;
+  align-items: center; gap: 6px;
+}
+.pole-chip .dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+.pole-chip.ok  { background: rgba(52,211,153,.08); color: var(--green); }
+.pole-chip.ok .dot  { background: var(--green); }
+.pole-chip.bad { background: rgba(248,113,113,.08); color: var(--red); }
+.pole-chip.bad .dot { background: var(--red); }
+
+/* Plant info */
+.plant-info {
+  width: 100%; max-width: 1200px; text-align: center;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  color: var(--muted); padding-bottom: 20px;
+}
+.plant-info span { color: var(--text2); }
+
+/* Responsive */
+@media (max-width: 800px) {
+  .controls { flex-direction: column; gap: 14px; }
+  .gain-group { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════ HEADER ═══════ -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">ROB 311</div>
+    <div class="header-title"><span>Root Locus PID Tuning</span></div>
+  </div>
+  <div id="badge" class="badge unstable">UNSTABLE</div>
+</div>
+
+<!-- ═══════ GAIN SLIDERS ═══════ -->
+<div class="controls">
+  <!-- Kp -->
+  <div class="gain-group">
+    <div class="gain-top">
+      <span class="gain-name">K<sub>p</sub></span>
+      <span id="kpVal" class="gain-val kp">0.00</span>
+    </div>
+    <div class="gain-desc">Proportional — stiffness against tilt error</div>
+    <div class="slider-row">
+      <input type="range" id="kpSlider" class="s-kp" min="0" max="300" step="1" value="0">
+      <input type="number" id="kpNum" class="num-input" min="0" max="1000" step="1" value="0">
+    </div>
+  </div>
+  <!-- Ki -->
+  <div class="gain-group">
+    <div class="gain-top">
+      <span class="gain-name">K<sub>i</sub></span>
+      <span id="kiVal" class="gain-val ki">0.00</span>
+    </div>
+    <div class="gain-desc">Integral — eliminates steady-state tilt offset</div>
+    <div class="slider-row">
+      <input type="range" id="kiSlider" class="s-ki" min="0" max="50" step="0.5" value="0">
+      <input type="number" id="kiNum" class="num-input" min="0" max="200" step="0.5" value="0">
+    </div>
+  </div>
+  <!-- Kd -->
+  <div class="gain-group">
+    <div class="gain-top">
+      <span class="gain-name">K<sub>d</sub></span>
+      <span id="kdVal" class="gain-val kd">0.00</span>
+    </div>
+    <div class="gain-desc">Derivative — damping, resists rate of tilt change</div>
+    <div class="slider-row">
+      <input type="range" id="kdSlider" class="s-kd" min="0" max="50" step="0.5" value="0">
+      <input type="number" id="kdNum" class="num-input" min="0" max="200" step="0.5" value="0">
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MAIN CONTENT ═══════ -->
+<div class="main">
+
+  <!-- Plot image -->
+  <div class="plot-wrap">
+    <div id="loading" class="loading"><div class="spinner"></div></div>
+    <div id="placeholder" class="placeholder">Adjust gains above to generate the root locus</div>
+    <img id="plotImg" src="" alt="Root Locus & Step Response" style="display:none;">
+  </div>
+
+  <!-- Closed-loop poles readout -->
+  <div id="polesBar" class="poles-bar" style="display:none;">
+    <span class="poles-title">Closed-Loop Poles</span>
+    <div id="polesChips"></div>
+  </div>
+
+  <!-- Plant info -->
+  <div id="plantInfo" class="plant-info"></div>
+</div>
+
+
+<!-- ═══════ JAVASCRIPT ═══════ -->
+<script>
+(() => {
+  "use strict";
+
+  // ── DOM refs ──
+  const els = {
+    kpS: document.getElementById("kpSlider"),
+    kiS: document.getElementById("kiSlider"),
+    kdS: document.getElementById("kdSlider"),
+    kpN: document.getElementById("kpNum"),
+    kiN: document.getElementById("kiNum"),
+    kdN: document.getElementById("kdNum"),
+    kpV: document.getElementById("kpVal"),
+    kiV: document.getElementById("kiVal"),
+    kdV: document.getElementById("kdVal"),
+    badge:  document.getElementById("badge"),
+    loading: document.getElementById("loading"),
+    placeholder: document.getElementById("placeholder"),
+    img:    document.getElementById("plotImg"),
+    polesBar:   document.getElementById("polesBar"),
+    polesChips: document.getElementById("polesChips"),
+    plantInfo:  document.getElementById("plantInfo"),
+  };
+
+  // ── Debounce / flight control ──
+  let inFlight = false;
+  let pending  = false;
+  let debounceTimer = null;
+
+  // ── Link sliders ↔ number inputs ──
+  function linkPair(slider, numInput, display) {
+    function sync(val) {
+      slider.value = Math.min(val, parseFloat(slider.max));
+      numInput.value = val;
+      display.textContent = parseFloat(val).toFixed(2);
+    }
+    slider.addEventListener("input", () => {
+      sync(slider.value);
+      scheduleUpdate();
+    });
+    numInput.addEventListener("change", () => {
+      let v = parseFloat(numInput.value);
+      if (isNaN(v) || v < 0) v = 0;
+      sync(v);
+      scheduleUpdate();
+    });
+  }
+  linkPair(els.kpS, els.kpN, els.kpV);
+  linkPair(els.kiS, els.kiN, els.kiV);
+  linkPair(els.kdS, els.kdN, els.kdV);
+
+  // ── Schedule an API call (debounced 120ms) ──
+  function scheduleUpdate() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(doUpdate, 120);
+  }
+
+  // ── API call ──
+  async function doUpdate() {
+    if (inFlight) { pending = true; return; }
+    inFlight = true;
+    els.loading.classList.add("on");
+
+    const payload = {
+      Kp: parseFloat(els.kpN.value) || 0,
+      Ki: parseFloat(els.kiN.value) || 0,
+      Kd: parseFloat(els.kdN.value) || 0,
+    };
+
+    try {
+      const r = await fetch("/api/update", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload),
+      });
+      const data = await r.json();
+      applyResult(data);
+    } catch(e) {
+      console.error("API error:", e);
+    } finally {
+      inFlight = false;
+      els.loading.classList.remove("on");
+      if (pending) { pending = false; doUpdate(); }
+    }
+  }
+
+  // ── Apply server result to UI ──
+  function applyResult(data) {
+    // Plot image
+    els.placeholder.style.display = "none";
+    els.img.style.display = "block";
+    els.img.src = "data:image/png;base64," + data.img;
+
+    // Stability badge
+    if (data.stable) {
+      els.badge.textContent = "STABLE";
+      els.badge.className = "badge stable";
+    } else {
+      els.badge.textContent = "UNSTABLE";
+      els.badge.className = "badge unstable";
+    }
+
+    // Poles chips
+    els.polesBar.style.display = "flex";
+    let html = "";
+    for (const p of data.poles) {
+      const cls = p.unstable ? "bad" : "ok";
+      html += `<div class="pole-chip ${cls}"><div class="dot"></div>${p.text}</div>`;
+    }
+    els.polesChips.innerHTML = html;
+  }
+
+  // ── Load plant info once ──
+  fetch("/api/plant").then(r => r.json()).then(d => {
+    const num = d.num.map(v => v.toFixed(4));
+    const den = d.den.map(v => v.toFixed(4));
+    els.plantInfo.innerHTML =
+      `Plant: <span>G(s) = ${num.join("")} / (${den.join(" s² + " ).replace(/\+ -/g,"− ")})</span>` +
+      ` &nbsp;|&nbsp; Open-loop poles: <span>` +
+      d.poles.map(p => {
+        if (Math.abs(p.im) < 1e-6) return `s = ${p.re.toFixed(4)}`;
+        const sign = p.im >= 0 ? "+" : "−";
+        return `s = ${p.re.toFixed(4)} ${sign} ${Math.abs(p.im).toFixed(4)}j`;
+      }).join(", ") + `</span>`;
+  });
+
+  // ── Initial render with all gains at zero ──
+  doUpdate();
+})();
+</script>
+</body>
+</html>
