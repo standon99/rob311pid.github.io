@@ -282,7 +282,7 @@ def make_plots(num_g, den_g, Kp, Ki, Kd):
 
     # ──────────── ROOT LOCUS ────────────
     ax1.set_title("Root Locus — s-Plane", color="#e8edf5", fontsize=13,
-                   fontweight="bold", pad=10)
+                fontweight="bold", pad=10)
     ax1.set_xlabel("Real Axis (σ)", color=TEXT, fontsize=10)
     ax1.set_ylabel("Imaginary Axis (jω)", color=TEXT, fontsize=10)
 
@@ -310,7 +310,7 @@ def make_plots(num_g, den_g, Kp, Ki, Kd):
     # Branches
     for b in range(rl.shape[1]):
         ax1.plot(rl[:, b].real, rl[:, b].imag,
-                 color=LOCUS, lw=1.2, alpha=0.55)
+                color=LOCUS, lw=1.2, alpha=0.55)
 
     # OL poles (×)
     ax1.scatter(ol_p.real, ol_p.imag, marker="x", s=110,
@@ -332,11 +332,11 @@ def make_plots(num_g, den_g, Kp, Ki, Kd):
     ax1.scatter([], [], marker="D", s=50, color=CLP_OK,  label="CL poles (stable)")
     ax1.scatter([], [], marker="D", s=50, color=CLP_BAD, label="CL poles (unstable)")
     ax1.legend(loc="upper right", fontsize=8, facecolor=BG, edgecolor=GRID,
-               labelcolor=TEXT, framealpha=0.9)
+            labelcolor=TEXT, framealpha=0.9)
 
     # ──────────── STEP RESPONSE ────────────
     ax2.set_title("Closed-Loop Step Response", color="#e8edf5",
-                   fontsize=13, fontweight="bold", pad=10)
+                fontsize=13, fontweight="bold", pad=10)
     ax2.set_xlabel("Time (s)", color=TEXT, fontsize=10)
     ax2.set_ylabel("θ (rad)", color=TEXT, fontsize=10)
     ax2.axhline(1.0, color=REF, lw=1, ls=":", alpha=0.6, label="Reference")
@@ -347,11 +347,10 @@ def make_plots(num_g, den_g, Kp, Ki, Kd):
 
     if not stable:
         ax2.text(0.5, 0.5, "UNSTABLE", transform=ax2.transAxes,
-                 fontsize=28, fontweight="bold", color=CLP_BAD,
-                 ha="center", va="center", alpha=0.3)
+                fontsize=28, fontweight="bold", color=CLP_BAD,
+                ha="center", va="center", alpha=0.3)
 
-    ax2.legend(loc="upper right", fontsize=8, facecolor=BG, edgecolor=GRID,
-               labelcolor=TEXT, framealpha=0.9)
+    ax2.legend(loc="upper right", fontsize=8, facecolor=BG, edgecolor=GRID,labelcolor=TEXT, framealpha=0.9)
 
     plt.tight_layout(pad=2)
 
@@ -380,7 +379,7 @@ def make_plots(num_g, den_g, Kp, Ki, Kd):
 # ║  SECTION 5 — FLASK APPLICATION                                          ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='docs')
 
 # Build plant once at startup
 G_NUM, G_DEN = build_plant_tf()
@@ -419,7 +418,7 @@ def api_plant():
         "num": G_NUM.tolist(),
         "den": G_DEN.tolist(),
         "poles": [{"re": float(p.real), "im": float(p.imag)}
-                  for p in np.roots(G_DEN)],
+                for p in np.roots(G_DEN)],
     })
 
 
