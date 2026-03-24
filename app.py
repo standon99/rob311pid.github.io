@@ -379,7 +379,7 @@ def make_plots(num_g, den_g, Kp, Ki, Kd):
 # ║  SECTION 5 — FLASK APPLICATION                                          ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
-app = Flask(__name__, template_folder='docs')
+app = Flask(__name__, template_folder='public')
 
 # Build plant once at startup
 G_NUM, G_DEN = build_plant_tf()
